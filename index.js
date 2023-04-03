@@ -1,19 +1,23 @@
 let state = {
   hash: location.hash,
   contacts: [],
+  searchValue: "",
 };
 
 function SetState(newState) {
   const prevState = { ...state };
   const nextState = { ...state, ...newState };
-  OnStateChange(prevState, nextState);
   state = nextState;
+  OnStateChange(prevState, nextState);
   Render();
 }
 
 function OnStateChange(prevState, nextState) {
   if (prevState.hash !== nextState.hash) {
     history.pushState(null, "", nextState.hash);
+  }
+  if (prevState.searchValue !== nextState.searchValue) {
+    FetchData();
   }
 }
 
@@ -25,7 +29,7 @@ function Link(props) {
   link.onclick = function (event) {
     event.preventDefault();
     const url = new URL(event.target.href);
-    SetState({ hash: url.hash });
+    SetState({ hash: url.hash, searchValue: "" });
   };
   return link;
 }
@@ -56,13 +60,21 @@ function inputtext() {
   const input = document.createElement("input");
   input.type = "text";
   input.placeholder = "Enter Name";
+  input.id = "input";
+  input.value = state.searchValue;
+  input.oninput = function (event) {
+    SetState({ searchValue: event.target.value });
+  };
   return input;
 }
 
-function inputbutton(props) {
+function clearbutton(props) {
   const button = document.createElement("input");
   button.type = "button";
-  button.value = props;
+  button.value = props.value;
+  button.onclick = function () {
+    SetState({ searchValue: "" });
+  };
   return button;
 }
 
@@ -96,7 +108,9 @@ function HomePage() {
   const navBar = NavBar();
   const header = HeaderText("Contact List");
   const input = inputtext();
-  const button = inputbutton("Clear");
+  const button = clearbutton({
+    value: "Clear",
+  });
   const list = printlist();
   const list2 = printlist();
   const div = document.createElement("div");
@@ -113,7 +127,9 @@ function FavoritesPage() {
   const navBar = NavBar();
   const header = HeaderText("Favorite Contact List");
   const input = inputtext();
-  const button = inputbutton("Clear");
+  const button = clearbutton({
+    value: "Clear",
+  });
   const div = document.createElement("div");
   div.append(navBar);
   div.append(header);
@@ -135,8 +151,17 @@ function App() {
 function Render() {
   const root = document.getElementById("root");
   const app = App();
+  const focusedIdElement = document.activeElement.id;
+  const focusedElementSelectionStart = document.activeElement.selectionStart;
+  const focusedElementSelectionEnd = document.activeElement.selectionEnd;
   root.innerHTML = "";
   root.append(app);
+  if (focusedIdElement) {
+    const focusedElement = document.getElementById(focusedIdElement);
+    focusedElement.focus();
+    focusedElement.selectionStart = focusedElementSelectionStart;
+    focusedElement.selectionEnd = focusedElementSelectionEnd;
+  }
 }
 
 Render();
