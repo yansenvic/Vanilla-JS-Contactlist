@@ -2,34 +2,49 @@ let state = {
   hash: location.hash,
   contacts: [],
   searchValue: "",
+  currentPage: 1,
+  isLoading: false,
+  errorMassage: "",
+  totalData: 0,
 };
 
-function SetState(newState) {
+function setState(newState) {
   const prevState = { ...state };
   const nextState = { ...state, ...newState };
   state = nextState;
-  OnStateChange(prevState, nextState);
+  onStateChange(prevState, nextState);
   Render();
 }
 
-function OnStateChange(prevState, nextState) {
+let timer;
+
+function onStateChange(prevState, nextState) {
   if (prevState.hash !== nextState.hash) {
     history.pushState(null, "", nextState.hash);
+    setState({ searchValue: "" });
   }
   if (prevState.searchValue !== nextState.searchValue) {
-    FetchData();
+    setState({ isLoading: true });
+    if (timer) {
+      clearTimeout(timer);
+    }
+    timer = setTimeout(() => {
+      fetchData();
+    }, 1000);
+  }
+  if (prevState.currentPage !== nextState.currentPage) {
+    fetchData();
   }
 }
 
 function Link(props) {
   const link = document.createElement("a");
-  let a = state.data + 1;
   link.href = props.href;
   link.textContent = props.label;
   link.onclick = function (event) {
     event.preventDefault();
     const url = new URL(event.target.href);
-    SetState({ hash: url.hash, searchValue: "" });
+    setState({ hash: url.hash });
   };
   return link;
 }
@@ -50,84 +65,141 @@ function NavBar() {
   return div;
 }
 
+function Pages() {
+  const totalPage = Math.ceil(state.totalData / 10);
+  let div = document.createElement("div");
+  for (let index = 1; index <= totalPage; index++) {
+    const link = document.createElement("a");
+    const number = index;
+    link.href = state.hash;
+    link.textContent = index + " ";
+    link.onclick = function (event) {
+      setState({ currentPage: number });
+      console.log(state.currentPage);
+    };
+    div.append(link);
+  }
+  return div;
+}
+
 function HeaderText(text) {
   const teks = document.createElement("h2");
   teks.innerText = text;
   return teks;
 }
 
-function inputtext() {
+function InputText() {
   const input = document.createElement("input");
   input.type = "text";
   input.placeholder = "Enter Name";
   input.id = "input";
   input.value = state.searchValue;
   input.oninput = function (event) {
-    SetState({ searchValue: event.target.value });
+    setState({ searchValue: event.target.value });
   };
   return input;
 }
 
-function clearbutton(props) {
+function ClearButton(props) {
   const button = document.createElement("input");
   button.type = "button";
+  button.value = props;
   button.value = props.value;
   button.onclick = function () {
-    SetState({ searchValue: "" });
+    setState({ searchValue: "" });
   };
   return button;
 }
 
-function printlist() {
-  const list = document.createElement("dl");
-  const dt = document.createElement("dt");
-  const dd1 = document.createElement("dd");
-  const dd2 = document.createElement("dd");
-  const dd3 = document.createElement("dd");
-  dt.textContent = "1";
-  dd1.textContent = "Nama";
-  dd2.textContent = "email";
-  dd3.textContent = "button";
-  dt.append(dd1);
-  dt.append(dd2);
-  dt.append(dd3);
-  list.append(dt);
+function FavButton(props) {
+  const button = document.createElement("input");
+  button.type = "button";
+  button.value = props.value;
+  button.onclick = function () {
+    setState({ searchValue: "" });
+  };
+  return button;
+}
+
+function ContactList() {
+  const list = document.createElement("ol");
+  list.start = (state.currentPage - 1) * 10 + 1;
+  const items = state.contacts.map((data) => {
+    const li = document.createElement("li");
+    const fullname = document.createElement("p");
+    const email = document.createElement("p");
+    const button = FavButton({ value: "add to Favorite" });
+    fullname.textContent =
+      data.firstName + " " + data.maidenName + " " + data.lastName;
+    email.textContent = data.email;
+    li.append(fullname, email, button);
+    return li;
+  });
+  list.append(...items);
   return list;
 }
 
-function FetchData() {
-  fetch("https://dummyjson.com/users/search?q=&skip=0&limit=10").then(
-    (result) =>
-      result.json().then((data) => {
-        SetState({ contacts: [...data.users] });
-      })
-  );
+function fetchData() {
+  const limit = 10;
+  const skip = (state.currentPage - 1) * limit;
+  fetch(
+    `https://dummyjson.com/users/search?q=${state.searchValue}&skip=${skip}&limit=${limit}`
+  )
+    .then((result) => {
+      return result.json();
+    })
+    .then((data) => {
+      setState({
+        contacts: [...data.users],
+        totalData: data.total,
+        errorMassage: "",
+      });
+    })
+    .catch((err) => {
+      console.log(err.message);
+      setState({ contacts: [], errorMassage: err.message, totalData: 0 });
+    })
+    .finally(() => setState({ isLoading: false }));
 }
 
 function HomePage() {
   const navBar = NavBar();
   const header = HeaderText("Contact List");
-  const input = inputtext();
-  const button = clearbutton({
+  const input = InputText();
+  const button = ClearButton({
     value: "Clear",
   });
-  const list = printlist();
-  const list2 = printlist();
+  const list = ContactList();
+  const page = Pages();
   const div = document.createElement("div");
   div.append(navBar);
   div.append(header);
   div.append(input);
   div.append(button);
-  div.append(list);
-  div.append(list2);
+  if (state.isLoading) {
+    const loadingText = document.createElement("p");
+    loadingText.textContent = "Data is Loading";
+    div.append(loadingText);
+  } else if (state.errorMassage !== "") {
+    const errorText = document.createElement("p");
+    errorText.textContent = state.errorMassage;
+    div.append(errorText);
+  } else if (state.totalData > 0) {
+    div.append(list);
+    div.append(page);
+  } else {
+    const emptyText = document.createElement("p");
+    emptyText.textContent = "Data empty";
+    div.append(emptyText);
+  }
   return div;
 }
 
 function FavoritesPage() {
   const navBar = NavBar();
   const header = HeaderText("Favorite Contact List");
-  const input = inputtext();
-  const button = clearbutton({
+  const input = InputText();
+  const button = ClearButton({
     value: "Clear",
   });
   const div = document.createElement("div");
@@ -141,7 +213,7 @@ function FavoritesPage() {
 function App() {
   const homepage = HomePage();
   const favoritespage = FavoritesPage();
-  if (state.hash === "#home") {
+  if (state.hash === "#home" || state.hash === "") {
     return homepage;
   } else if (state.hash === "#favorites") {
     return favoritespage;
@@ -165,3 +237,4 @@ function Render() {
 }
 
 Render();
+onStateChange({}, state);

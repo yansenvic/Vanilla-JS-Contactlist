@@ -1,0 +1,197 @@
+let state = {
+  hash: location.hash,
+  contacts: [],
+  searchValue: "",
+  currentpage: 1,
+};
+
+function setState(newState) {
+  const prevState = { ...state };
+  const nextState = { ...state, ...newState };
+  state = nextState;
+  onStateChange(prevState, nextState);
+  Render();
+}
+
+function onStateChange(prevState, nextState) {
+  if (prevState.hash !== nextState.hash) {
+    history.pushState(null, "", nextState.hash);
+  }
+  if (prevState.searchValue !== nextState.searchValue) {
+    FetchData();
+  }
+}
+
+function Link(props) {
+  const link = document.createElement("a");
+  let a = state.data + 1;
+  link.href = props.href;
+  link.textContent = props.label;
+  link.onclick = function (event) {
+    event.preventDefault();
+    const url = new URL(event.target.href);
+    setState({ hash: url.hash, searchValue: "" });
+  };
+  return link;
+}
+
+function NavBar() {
+  const linkHome = Link({
+    href: "#home",
+    label: "Home",
+  });
+  const linkFavorites = Link({
+    href: "#favorites",
+    label: "Favorites",
+  });
+  const div = document.createElement("div");
+  div.append(linkHome);
+  div.append(" - ");
+  div.append(linkFavorites);
+  return div;
+}
+
+function HeaderText(text) {
+  const teks = document.createElement("h2");
+  teks.innerText = text;
+  return teks;
+}
+
+function Inputtext() {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "Enter Name";
+  input.id = "input";
+  input.value = state.searchValue;
+  input.oninput = function (event) {
+    setState({ searchValue: event.target.value });
+  };
+  return input;
+}
+
+function button(props) {
+  const button = document.createElement("input");
+  button.type = "button";
+  button.value = props.value;
+  button.onclick = props.onClick;
+  return button;
+}
+
+function clear(){
+  const asd = clearbutton({
+    value : "teks"
+    onClick : function (){
+      
+    }
+  })
+}
+
+function FavButton(props) {
+  const button = document.createElement("input");
+  button.type = "button";
+  button.value = props.value;
+  button.onclick = function () {
+    setState({ searchValue: "" });
+  };
+  return button;
+}
+
+function printlist() {
+  const list = document.createElement("ol");
+  state.contacts.map((data) => {
+    const li = document.createElement("li");
+    const dd1 = document.createElement("dd");
+    const dd2 = document.createElement("dd");
+    const dd3 = document.createElement("dd");
+    const button = FavButton({ value: "add to Favorite" });
+    const bre = document.createElement("br");
+    dd1.textContent =
+      data.firstName + " " + data.maidenName + " " + data.lastName;
+    dd2.textContent = data.email;
+    dd3.append(button);
+    li.append(dd1);
+    li.append(dd2);
+    li.append(dd3);
+    li.append(bre);
+    list.append(li);
+  });
+  return list;
+}
+
+// function printlist() {
+//   const list = document.createElement("ol");
+//   state.contacts.map((data) => {
+//     return `<li>${data.firstName}</br> ${data.lastName} </li>`);
+//   });
+//   return list;
+// }
+
+function FetchData() {
+  fetch("https://dummyjson.com/users/search?q=&skip=0&limit=10").then(
+    (result) =>
+      result.json().then((data) => {
+        setState({ contacts: [...data.users] });
+      })
+  );
+}
+
+function HomePage() {
+  const navBar = NavBar();
+  const header = HeaderText("Contact List");
+  const input = Inputtext();
+  const button = clearbutton({
+    value: "Clear",
+  });
+  const list = printlist();
+  const div = document.createElement("div");
+  div.append(navBar);
+  div.append(header);
+  div.append(input);
+  div.append(button);
+  div.append(list);
+  return div;
+}
+
+function FavoritesPage() {
+  const navBar = NavBar();
+  const header = HeaderText("Favorite Contact List");
+  const input = Inputtext();
+  const button = clearbutton({
+    value: "Clear",
+  });
+  const div = document.createElement("div");
+  div.append(navBar);
+  div.append(header);
+  div.append(input);
+  div.append(button);
+  return div;
+}
+
+function App() {
+  const homepage = HomePage();
+  const favoritespage = FavoritesPage();
+  if (state.hash === "#home" || state.hash === "") {
+    return homepage;
+  } else if (state.hash === "#favorites") {
+    return favoritespage;
+  }
+}
+
+function Render() {
+  const root = document.getElementById("root");
+  const app = App();
+  const focusedIdElement = document.activeElement.id;
+  const focusedElementSelectionStart = document.activeElement.selectionStart;
+  const focusedElementSelectionEnd = document.activeElement.selectionEnd;
+  root.innerHTML = "";
+  root.append(app);
+  if (focusedIdElement) {
+    const focusedElement = document.getElementById(focusedIdElement);
+    focusedElement.focus();
+    focusedElement.selectionStart = focusedElementSelectionStart;
+    focusedElement.selectionEnd = focusedElementSelectionEnd;
+  }
+}
+
+Render();
+onStateChange({}, state);
