@@ -1,6 +1,7 @@
 let state = {
   hash: location.hash,
   contacts: [],
+  favContacs: JSON.parse(localStorage.getItem("favContacts")) ?? [],
   searchValue: "",
   currentPage: 1,
   isLoading: false,
@@ -30,10 +31,13 @@ function onStateChange(prevState, nextState) {
     }
     timer = setTimeout(() => {
       fetchData();
-    }, 1000);
+    }, 500);
   }
   if (prevState.currentPage !== nextState.currentPage) {
     fetchData();
+  }
+  if (prevState.favContacs !== nextState.favContacs) {
+    localStorage.setItem("favContacts", JSON.stringify(nextState.favContacs));
   }
 }
 
@@ -74,8 +78,8 @@ function Pages() {
     link.href = state.hash;
     link.textContent = index + " ";
     link.onclick = function (event) {
+      event.preventDefault();
       setState({ currentPage: number });
-      console.log(state.currentPage);
     };
     div.append(link);
   }
@@ -115,10 +119,29 @@ function FavButton(props) {
   const button = document.createElement("input");
   button.type = "button";
   button.value = props.value;
-  button.onclick = function () {
-    setState({ searchValue: "" });
-  };
+  button.id = props.id;
+  button.onclick = props.func;
   return button;
+}
+
+function addFav(event) {
+  setState({
+    favContacs: [
+      ...state.favContacs,
+      state.contacts[(event.target.id - 1) % 10],
+    ],
+  });
+}
+
+function delFav(event) {
+  const result = state.favContacs.filter(filterid);
+  function filterid(data) {
+    return data.id !== Number(event.target.id);
+  }
+  console.log(result);
+  setState({
+    favContacs: [...result],
+  });
 }
 
 function ContactList() {
@@ -128,11 +151,20 @@ function ContactList() {
     const li = document.createElement("li");
     const fullname = document.createElement("p");
     const email = document.createElement("p");
-    const button = FavButton({ value: "add to Favorite" });
+    const button = FavButton({
+      value: "add to Favorite",
+      func: addFav,
+      id: data.id,
+    });
+    const buttondel = FavButton({
+      value: "del from Favorite",
+      func: delFav,
+      id: data.id,
+    });
     fullname.textContent =
       data.firstName + " " + data.maidenName + " " + data.lastName;
     email.textContent = data.email;
-    li.append(fullname, email, button);
+    li.append(fullname, email, button, buttondel);
     return li;
   });
   list.append(...items);
@@ -156,7 +188,6 @@ function fetchData() {
       });
     })
     .catch((err) => {
-      console.log(err.message);
       setState({ contacts: [], errorMassage: err.message, totalData: 0 });
     })
     .finally(() => setState({ isLoading: false }));
@@ -223,17 +254,17 @@ function App() {
 function Render() {
   const root = document.getElementById("root");
   const app = App();
-  const focusedIdElement = document.activeElement.id;
-  const focusedElementSelectionStart = document.activeElement.selectionStart;
-  const focusedElementSelectionEnd = document.activeElement.selectionEnd;
+  // const focusedIdElement = document.activeElement.id;
+  // const focusedElementSelectionStart = document.activeElement.selectionStart;
+  // const focusedElementSelectionEnd = document.activeElement.selectionEnd;
   root.innerHTML = "";
   root.append(app);
-  if (focusedIdElement) {
-    const focusedElement = document.getElementById(focusedIdElement);
-    focusedElement.focus();
-    focusedElement.selectionStart = focusedElementSelectionStart;
-    focusedElement.selectionEnd = focusedElementSelectionEnd;
-  }
+  // if (focusedIdElement) {
+  //   const focusedElement = document.getElementById(focusedIdElement);
+  //   focusedElement.focus();
+  //   focusedElement.selectionStart = focusedElementSelectionStart;
+  //   focusedElement.selectionEnd = focusedElementSelectionEnd;
+  // }
 }
 
 Render();
