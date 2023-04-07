@@ -115,7 +115,7 @@ function ClearButton(props) {
   return button;
 }
 
-function FavButton(props) {
+function Button(props) {
   const button = document.createElement("input");
   button.type = "button";
   button.value = props.value;
@@ -138,7 +138,6 @@ function delFav(event) {
   function filterid(data) {
     return data.id !== Number(event.target.id);
   }
-  console.log(result);
   setState({
     favContacs: [...result],
   });
@@ -151,20 +150,32 @@ function ContactList() {
     const li = document.createElement("li");
     const fullname = document.createElement("p");
     const email = document.createElement("p");
-    const button = FavButton({
-      value: "add to Favorite",
-      func: addFav,
-      id: data.id,
-    });
-    const buttondel = FavButton({
-      value: "del from Favorite",
-      func: delFav,
-      id: data.id,
-    });
+    let i = 0;
+    let findSame = false;
+    do {
+      if (JSON.stringify(data) === JSON.stringify(state.favContacs[i])) {
+        findSame = true;
+      }
+      i++;
+    } while (i < state.favContacs.length && findSame === false);
+    let button;
+    if (findSame === false) {
+      button = Button({
+        value: "Add to Favorite",
+        func: addFav,
+        id: data.id,
+      });
+    } else {
+      button = Button({
+        value: "Delete from Favorite",
+        func: delFav,
+        id: data.id,
+      });
+    }
     fullname.textContent =
       data.firstName + " " + data.maidenName + " " + data.lastName;
     email.textContent = data.email;
-    li.append(fullname, email, button, buttondel);
+    li.append(fullname, email, button);
     return li;
   });
   list.append(...items);
@@ -254,17 +265,22 @@ function App() {
 function Render() {
   const root = document.getElementById("root");
   const app = App();
-  // const focusedIdElement = document.activeElement.id;
-  // const focusedElementSelectionStart = document.activeElement.selectionStart;
-  // const focusedElementSelectionEnd = document.activeElement.selectionEnd;
+  let focusedIdElement;
+  let focusedElementSelectionStart;
+  let focusedElementSelectionEnd;
+  if (document.activeElement.type === "text") {
+    focusedIdElement = document.activeElement.id;
+    focusedElementSelectionStart = document.activeElement.selectionStart;
+    focusedElementSelectionEnd = document.activeElement.selectionEnd;
+  }
   root.innerHTML = "";
   root.append(app);
-  // if (focusedIdElement) {
-  //   const focusedElement = document.getElementById(focusedIdElement);
-  //   focusedElement.focus();
-  //   focusedElement.selectionStart = focusedElementSelectionStart;
-  //   focusedElement.selectionEnd = focusedElementSelectionEnd;
-  // }
+  if (focusedIdElement) {
+    const focusedElement = document.getElementById(focusedIdElement);
+    focusedElement.focus();
+    focusedElement.selectionStart = focusedElementSelectionStart;
+    focusedElement.selectionEnd = focusedElementSelectionEnd;
+  }
 }
 
 Render();
