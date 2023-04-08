@@ -22,7 +22,7 @@ let timer;
 function onStateChange(prevState, nextState) {
   if (prevState.hash !== nextState.hash) {
     history.pushState(null, "", nextState.hash);
-    setState({ searchValue: "" });
+    setState({ searchValue: "", currentPage: 1 });
   }
   if (prevState.searchValue !== nextState.searchValue) {
     setState({ isLoading: true });
@@ -30,7 +30,12 @@ function onStateChange(prevState, nextState) {
       clearTimeout(timer);
     }
     timer = setTimeout(() => {
-      fetchData();
+      if (state.hash === "#home") {
+        fetchData();
+      } else if (state.hash === "#favorites") {
+        filterFavContactslist();
+        setState({ isLoading: false });
+      }
     }, 500);
   }
   if (prevState.currentPage !== nextState.currentPage) {
@@ -182,6 +187,44 @@ function ContactList() {
   return list;
 }
 
+function filterFavContactslist() {
+  const items = state.favContacs.filter(filterName);
+  function filterName(item) {
+    const fullname = (
+      item.firstName +
+      " " +
+      item.maidenName +
+      " " +
+      item.lastName
+    ).toLowerCase();
+    return fullname.match(state.searchValue.toLowerCase());
+  }
+  return [...items];
+}
+
+function favContacsList() {
+  const filterData = filterFavContactslist();
+  const list = document.createElement("ol");
+  list.start = (state.currentPage - 1) * 10 + 1;
+  const items = filterData.map((data) => {
+    const li = document.createElement("li");
+    const fullname = document.createElement("p");
+    const email = document.createElement("p");
+    button = Button({
+      value: "Delete from Favorite",
+      func: delFav,
+      id: data.id,
+    });
+    fullname.textContent =
+      data.firstName + " " + data.maidenName + " " + data.lastName;
+    email.textContent = data.email;
+    li.append(fullname, email, button);
+    return li;
+  });
+  list.append(...items);
+  return list;
+}
+
 function fetchData() {
   const limit = 10;
   const skip = (state.currentPage - 1) * limit;
@@ -244,11 +287,12 @@ function FavoritesPage() {
   const button = ClearButton({
     value: "Clear",
   });
+  const list = favContacsList();
   const div = document.createElement("div");
   div.append(navBar);
   div.append(header);
   div.append(input);
-  div.append(button);
+  div.append(button, list);
   return div;
 }
 
