@@ -1,6 +1,7 @@
 let state = {
   hash: location.hash,
   contacts: [],
+  favContacs: JSON.parse(localStorage.getItem("favContacts")) ?? [],
   searchValue: "",
   currentPage: 1,
   isLoading: false,
@@ -16,20 +17,32 @@ function setState(newState) {
   Render();
 }
 
+let timer;
+
 function onStateChange(prevState, nextState) {
   if (prevState.hash !== nextState.hash) {
     history.pushState(null, "", nextState.hash);
-    setState({ searchValue: "" });
+    setState({ searchValue: "", currentPage: 1 });
   }
   if (prevState.searchValue !== nextState.searchValue) {
     setState({ isLoading: true });
-    fetchData();
-  }
-  if (prevState.isLoading !== nextState.isLoading) {
-    filterContactList(nextState.searchValue);
+    if (timer) {
+      clearTimeout(timer);
+    }
+    timer = setTimeout(() => {
+      if (state.hash === "#home") {
+        fetchData();
+      } else if (state.hash === "#favorites") {
+        filterFavContactslist();
+        setState({ isLoading: false });
+      }
+    }, 500);
   }
   if (prevState.currentPage !== nextState.currentPage) {
     fetchData();
+  }
+  if (prevState.favContacs !== nextState.favContacs) {
+    localStorage.setItem("favContacts", JSON.stringify(nextState.favContacs));
   }
 }
 
@@ -70,8 +83,8 @@ function Pages() {
     link.href = state.hash;
     link.textContent = index + " ";
     link.onclick = function (event) {
+      event.preventDefault();
       setState({ currentPage: number });
-      console.log(state.currentPage);
     };
     div.append(link);
   }
@@ -107,24 +120,110 @@ function ClearButton(props) {
   return button;
 }
 
-function FavButton(props) {
+function Button(props) {
   const button = document.createElement("input");
   button.type = "button";
   button.value = props.value;
-  button.onclick = function () {
-    setState({ searchValue: "" });
-  };
+  button.id = props.id;
+  button.onclick = props.func;
   return button;
+}
+
+function addFav(event) {
+  setState({
+    favContacs: [
+      ...state.favContacs,
+      state.contacts[(event.target.id - 1) % 10],
+    ],
+  });
+}
+
+function delFav(event) {
+  const result = state.favContacs.filter(filterid);
+  function filterid(data) {
+    return data.id !== Number(event.target.id);
+  }
+  setState({
+    favContacs: [...result],
+  });
 }
 
 function ContactList() {
   const list = document.createElement("ol");
   list.start = (state.currentPage - 1) * 10 + 1;
-  const items = state.contacts.map((data) => {
+  const items = state.contacts.map((contact) => {
     const li = document.createElement("li");
     const fullname = document.createElement("p");
     const email = document.createElement("p");
-    const button = FavButton({ value: "add to Favorite" });
+    // let i = 0;
+    // let findSame = false;
+    // do {
+    //   if (JSON.stringify(contact) === JSON.stringify(state.favContacs[i])) {
+    //     findSame = true;
+    //   }
+    //   i++;
+    // } while (i < state.favContacs.length && findSame === false);
+    // let button;
+    // if (findSame === false) {
+    //   button = Button({
+    //     value: "Add to Favorite",
+    //     func: addFav,
+    //     id: contact.id,
+    //   });
+    // } else {
+    //   button = Button({
+    //     value: "Delete from Favorite",
+    //     func: delFav,
+    //     id: contact.id,
+    //   });
+    // }
+    const buttonStatus = state.favContacs.some(checkFavContact);
+    function checkFavContact(favContact) {
+      return contact.id === favContact.id;
+    }
+    button = Button({
+      value: buttonStatus ? "Delete from Favorite" : "Add to Favorite",
+      func: buttonStatus ? delFav : addFav,
+      id: contact.id,
+    });
+    fullname.textContent =
+      contact.firstName + " " + contact.maidenName + " " + contact.lastName;
+    email.textContent = contact.email;
+    li.append(fullname, email, button);
+    return li;
+  });
+  list.append(...items);
+  return list;
+}
+
+function filterFavContactslist() {
+  const items = state.favContacs.filter(filterName);
+  function filterName(item) {
+    const fullname = (
+      item.firstName +
+      " " +
+      item.maidenName +
+      " " +
+      item.lastName
+    ).toLowerCase();
+    return fullname.match(state.searchValue.toLowerCase());
+  }
+  return [...items];
+}
+
+function favContacsList() {
+  const filterData = filterFavContactslist();
+  const list = document.createElement("ol");
+  list.start = (state.currentPage - 1) * 10 + 1;
+  const items = filterData.map((data) => {
+    const li = document.createElement("li");
+    const fullname = document.createElement("p");
+    const email = document.createElement("p");
+    button = Button({
+      value: "Delete from Favorite",
+      func: delFav,
+      id: data.id,
+    });
     fullname.textContent =
       data.firstName + " " + data.maidenName + " " + data.lastName;
     email.textContent = data.email;
@@ -136,10 +235,10 @@ function ContactList() {
 }
 
 function fetchData() {
+  const limit = 10;
+  const skip = (state.currentPage - 1) * limit;
   fetch(
-    "https://dummyjson.com/users/search?q=&skip=" +
-      (state.currentPage - 1) * 10 +
-      "&limit=10"
+    `https://dummyjson.com/users/search?q=${state.searchValue}&skip=${skip}&limit=${limit}`
   )
     .then((result) => {
       return result.json();
@@ -148,29 +247,13 @@ function fetchData() {
       setState({
         contacts: [...data.users],
         totalData: data.total,
-        isLoading: true,
+        errorMassage: "",
       });
     })
     .catch((err) => {
-      console.log(err);
-      setState({ errorMassage: err });
-    });
-  setState({ isLoading: false });
-}
-
-function filterContactList(value) {
-  const items = state.contacts.filter(filterName);
-  function filterName(item) {
-    const fullname = (
-      item.firstName +
-      " " +
-      item.maidenName +
-      " " +
-      item.lastName
-    ).toLowerCase();
-    return fullname.match(value.toLowerCase());
-  }
-  setState({ contacts: [...items] });
+      setState({ contacts: [], errorMassage: err.message, totalData: 0 });
+    })
+    .finally(() => setState({ isLoading: false }));
 }
 
 function HomePage() {
@@ -187,8 +270,22 @@ function HomePage() {
   div.append(header);
   div.append(input);
   div.append(button);
-  div.append(list);
-  div.append(page);
+  if (state.isLoading) {
+    const loadingText = document.createElement("p");
+    loadingText.textContent = "Data is Loading";
+    div.append(loadingText);
+  } else if (state.errorMassage !== "") {
+    const errorText = document.createElement("p");
+    errorText.textContent = state.errorMassage;
+    div.append(errorText);
+  } else if (state.totalData > 0) {
+    div.append(list);
+    div.append(page);
+  } else {
+    const emptyText = document.createElement("p");
+    emptyText.textContent = "Data empty";
+    div.append(emptyText);
+  }
   return div;
 }
 
@@ -199,11 +296,12 @@ function FavoritesPage() {
   const button = ClearButton({
     value: "Clear",
   });
+  const list = favContacsList();
   const div = document.createElement("div");
   div.append(navBar);
   div.append(header);
   div.append(input);
-  div.append(button);
+  div.append(button, list);
   return div;
 }
 
@@ -220,9 +318,14 @@ function App() {
 function Render() {
   const root = document.getElementById("root");
   const app = App();
-  const focusedIdElement = document.activeElement.id;
-  const focusedElementSelectionStart = document.activeElement.selectionStart;
-  const focusedElementSelectionEnd = document.activeElement.selectionEnd;
+  let focusedIdElement;
+  let focusedElementSelectionStart;
+  let focusedElementSelectionEnd;
+  if (document.activeElement.type === "text") {
+    focusedIdElement = document.activeElement.id;
+    focusedElementSelectionStart = document.activeElement.selectionStart;
+    focusedElementSelectionEnd = document.activeElement.selectionEnd;
+  }
   root.innerHTML = "";
   root.append(app);
   if (focusedIdElement) {

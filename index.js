@@ -1,9 +1,11 @@
 let state = {
   hash: location.hash,
   contacts: [],
-  favContacs: JSON.parse(localStorage.getItem("favContacts")) ?? [],
+  favContacts: JSON.parse(localStorage.getItem("favContacts")) ?? [],
   searchValue: "",
+  searchValueFavorite: "",
   currentPage: 1,
+  currentPageFavorite: 1,
   isLoading: false,
   errorMassage: "",
   totalData: 0,
@@ -22,7 +24,6 @@ let timer;
 function onStateChange(prevState, nextState) {
   if (prevState.hash !== nextState.hash) {
     history.pushState(null, "", nextState.hash);
-    setState({ searchValue: "", currentPage: 1 });
   }
   if (prevState.searchValue !== nextState.searchValue) {
     setState({ isLoading: true });
@@ -30,19 +31,15 @@ function onStateChange(prevState, nextState) {
       clearTimeout(timer);
     }
     timer = setTimeout(() => {
-      if (state.hash === "#home") {
-        fetchData();
-      } else if (state.hash === "#favorites") {
-        filterFavContactslist();
-        setState({ isLoading: false });
-      }
+      fetchData();
+      setState({ isLoading: false });
     }, 500);
   }
   if (prevState.currentPage !== nextState.currentPage) {
     fetchData();
   }
-  if (prevState.favContacs !== nextState.favContacs) {
-    localStorage.setItem("favContacts", JSON.stringify(nextState.favContacs));
+  if (prevState.favContacts !== nextState.favContacts) {
+    localStorage.setItem("favContacts", JSON.stringify(nextState.favContacts));
   }
 }
 
@@ -74,17 +71,17 @@ function NavBar() {
   return div;
 }
 
-function Pages() {
-  const totalPage = Math.ceil(state.totalData / 10);
+function Pages(props) {
+  const totalPage = Math.ceil(props.totalData / 10);
   let div = document.createElement("div");
   for (let index = 1; index <= totalPage; index++) {
     const link = document.createElement("a");
     const number = index;
     link.href = state.hash;
     link.textContent = index + " ";
-    link.onclick = function (event) {
+    link.onclick = function () {
       event.preventDefault();
-      setState({ currentPage: number });
+      props.onChange(number);
     };
     div.append(link);
   }
@@ -97,14 +94,14 @@ function HeaderText(text) {
   return teks;
 }
 
-function InputText() {
+function inputText(props) {
   const input = document.createElement("input");
   input.type = "text";
   input.placeholder = "Enter Name";
   input.id = "input";
-  input.value = state.searchValue;
+  input.value = props.value;
   input.oninput = function (event) {
-    setState({ searchValue: event.target.value });
+    props.onInput(event.target.value);
   };
   return input;
 }
@@ -114,9 +111,7 @@ function ClearButton(props) {
   button.type = "button";
   button.value = props;
   button.value = props.value;
-  button.onclick = function () {
-    setState({ searchValue: "" });
-  };
+  button.onclick = props.functionname;
   return button;
 }
 
@@ -129,57 +124,48 @@ function Button(props) {
   return button;
 }
 
-function addFav(event) {
+function ClearSearchValue() {
+  setState({ searchValue: "" });
+}
+
+function ClearSearchValueFavorite() {
+  setState({ searchValueFavorite: "" });
+}
+
+function addFav(id) {
   setState({
-    favContacs: [
-      ...state.favContacs,
-      state.contacts[(event.target.id - 1) % 10],
-    ],
+    favContacts: [...state.favContacts, state.contacts[(id - 1) % 10]],
   });
 }
 
-function delFav(event) {
-  const result = state.favContacs.filter(filterid);
+function delFav(id) {
+  const result = state.favContacts.filter(filterid);
   function filterid(data) {
-    return data.id !== Number(event.target.id);
+    return data.id !== Number(id);
   }
   setState({
-    favContacs: [...result],
+    favContacts: result,
   });
 }
 
 function ContactList() {
   const list = document.createElement("ol");
   list.start = (state.currentPage - 1) * 10 + 1;
-  const items = state.contacts.map((data) => {
+  const items = state.contacts.map((contact) => {
     const li = document.createElement("li");
     const fullname = document.createElement("p");
     const email = document.createElement("p");
-    let i = 0;
-    let findSame = false;
-    do {
-      if (JSON.stringify(data) === JSON.stringify(state.favContacs[i])) {
-        findSame = true;
-      }
-      i++;
-    } while (i < state.favContacs.length && findSame === false);
-    let button;
-    if (findSame === false) {
-      button = Button({
-        value: "Add to Favorite",
-        func: addFav,
-        id: data.id,
-      });
-    } else {
-      button = Button({
-        value: "Delete from Favorite",
-        func: delFav,
-        id: data.id,
-      });
-    }
+    const buttonStatus = state.favContacts.some((favContact) => {
+      return contact.id === favContact.id;
+    });
+    button = Button({
+      value: buttonStatus ? "Delete from Favorite" : "Add to Favorite",
+      func: buttonStatus ? () => delFav(contact.id) : () => addFav(contact.id),
+      id: contact.id,
+    });
     fullname.textContent =
-      data.firstName + " " + data.maidenName + " " + data.lastName;
-    email.textContent = data.email;
+      contact.firstName + " " + contact.maidenName + " " + contact.lastName;
+    email.textContent = contact.email;
     li.append(fullname, email, button);
     return li;
   });
@@ -188,36 +174,45 @@ function ContactList() {
 }
 
 function filterFavContactslist() {
-  const items = state.favContacs.filter(filterName);
-  function filterName(item) {
-    const fullname = (
-      item.firstName +
-      " " +
-      item.maidenName +
-      " " +
-      item.lastName
-    ).toLowerCase();
-    return fullname.match(state.searchValue.toLowerCase());
-  }
-  return [...items];
+  const items = state.favContacts.filter(filterName);
+  return [
+    ...items.slice(
+      (state.currentPageFavorite - 1) * 10,
+      state.currentPageFavorite * 10
+    ),
+  ];
 }
 
-function favContacsList() {
+function filterName(item) {
+  const fullname = (
+    item.firstName +
+    " " +
+    item.maidenName +
+    " " +
+    item.lastName
+  ).toLowerCase();
+  return fullname.match(state.searchValueFavorite.toLowerCase());
+}
+
+function favContactsList() {
   const filterData = filterFavContactslist();
   const list = document.createElement("ol");
-  list.start = (state.currentPage - 1) * 10 + 1;
-  const items = filterData.map((data) => {
+  list.start = (state.currentPageFavorite - 1) * 10 + 1;
+  const items = filterData.map((favContact) => {
     const li = document.createElement("li");
     const fullname = document.createElement("p");
     const email = document.createElement("p");
     button = Button({
       value: "Delete from Favorite",
-      func: delFav,
-      id: data.id,
+      func: () => delFav(favContact.id),
     });
     fullname.textContent =
-      data.firstName + " " + data.maidenName + " " + data.lastName;
-    email.textContent = data.email;
+      favContact.firstName +
+      " " +
+      favContact.maidenName +
+      " " +
+      favContact.lastName;
+    email.textContent = favContact.email;
     li.append(fullname, email, button);
     return li;
   });
@@ -250,12 +245,23 @@ function fetchData() {
 function HomePage() {
   const navBar = NavBar();
   const header = HeaderText("Contact List");
-  const input = InputText();
+  const input = inputText({
+    value: state.searchValue,
+    onInput: function (searchValues) {
+      setState({ searchValue: searchValues });
+    },
+  });
   const button = ClearButton({
     value: "Clear",
+    functionname: ClearSearchValue,
   });
   const list = ContactList();
-  const page = Pages();
+  const page = Pages({
+    totalData: state.totalData,
+    onChange: function (number) {
+      setState({ currentPage: number });
+    },
+  });
   const div = document.createElement("div");
   div.append(navBar);
   div.append(header);
@@ -283,16 +289,33 @@ function HomePage() {
 function FavoritesPage() {
   const navBar = NavBar();
   const header = HeaderText("Favorite Contact List");
-  const input = InputText();
+  const input = inputText({
+    value: state.searchValueFavorite,
+    onInput: function (searchValues) {
+      setState({ searchValueFavorite: searchValues });
+    },
+  });
   const button = ClearButton({
     value: "Clear",
+    functionname: ClearSearchValueFavorite,
   });
-  const list = favContacsList();
+  const list = favContactsList();
+  const page = Pages({
+    totalData: state.favContacts.filter(filterName).length,
+    onChange: function (number) {
+      setState({ currentPageFavorite: number });
+    },
+  });
   const div = document.createElement("div");
-  div.append(navBar);
-  div.append(header);
-  div.append(input);
-  div.append(button, list);
+  div.append(navBar, header, input, button);
+  if (filterFavContactslist().length > 0) {
+    div.append(list);
+  } else {
+    const emptyText = document.createElement("p");
+    emptyText.textContent = "Data empty";
+    div.append(emptyText);
+  }
+  div.append(page);
   return div;
 }
 
