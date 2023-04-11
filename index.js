@@ -32,8 +32,11 @@ function onStateChange(prevState, nextState) {
     }
     timer = setTimeout(() => {
       fetchData();
-      setState({ isLoading: false });
+      setState({ isLoading: false, currentPage: 1 });
     }, 500);
+  }
+  if (prevState.searchValueFavorite !== nextState.searchValueFavorite) {
+    setState({ currentPageFavorite: 1 });
   }
   if (prevState.currentPage !== nextState.currentPage) {
     fetchData();
@@ -106,20 +109,10 @@ function inputText(props) {
   return input;
 }
 
-function ClearButton(props) {
-  const button = document.createElement("input");
-  button.type = "button";
-  button.value = props;
-  button.value = props.value;
-  button.onclick = props.functionname;
-  return button;
-}
-
 function Button(props) {
   const button = document.createElement("input");
   button.type = "button";
   button.value = props.value;
-  button.id = props.id;
   button.onclick = props.func;
   return button;
 }
@@ -148,37 +141,13 @@ function delFav(id) {
   });
 }
 
-function ContactList() {
-  const list = document.createElement("ol");
-  list.start = (state.currentPage - 1) * 10 + 1;
-  const items = state.contacts.map((contact) => {
-    const li = document.createElement("li");
-    const fullname = document.createElement("p");
-    const email = document.createElement("p");
-    const buttonStatus = state.favContacts.some((favContact) => {
-      return contact.id === favContact.id;
-    });
-    button = Button({
-      value: buttonStatus ? "Delete from Favorite" : "Add to Favorite",
-      func: buttonStatus ? () => delFav(contact.id) : () => addFav(contact.id),
-      id: contact.id,
-    });
-    fullname.textContent =
-      contact.firstName + " " + contact.maidenName + " " + contact.lastName;
-    email.textContent = contact.email;
-    li.append(fullname, email, button);
-    return li;
-  });
-  list.append(...items);
-  return list;
-}
-
 function filterFavContactslist() {
+  const limit = 10;
   const items = state.favContacts.filter(filterName);
   return [
     ...items.slice(
-      (state.currentPageFavorite - 1) * 10,
-      state.currentPageFavorite * 10
+      (state.currentPageFavorite - 1) * limit,
+      state.currentPageFavorite * limit
     ),
   ];
 }
@@ -192,32 +161,6 @@ function filterName(item) {
     item.lastName
   ).toLowerCase();
   return fullname.match(state.searchValueFavorite.toLowerCase());
-}
-
-function favContactsList() {
-  const filterData = filterFavContactslist();
-  const list = document.createElement("ol");
-  list.start = (state.currentPageFavorite - 1) * 10 + 1;
-  const items = filterData.map((favContact) => {
-    const li = document.createElement("li");
-    const fullname = document.createElement("p");
-    const email = document.createElement("p");
-    button = Button({
-      value: "Delete from Favorite",
-      func: () => delFav(favContact.id),
-    });
-    fullname.textContent =
-      favContact.firstName +
-      " " +
-      favContact.maidenName +
-      " " +
-      favContact.lastName;
-    email.textContent = favContact.email;
-    li.append(fullname, email, button);
-    return li;
-  });
-  list.append(...items);
-  return list;
 }
 
 function fetchData() {
@@ -242,6 +185,32 @@ function fetchData() {
     .finally(() => setState({ isLoading: false }));
 }
 
+function ContactList(props) {
+  const limit = 10;
+  const list = document.createElement("ol");
+  list.start = (props.currentPage - 1) * limit + 1;
+  data = props.data;
+  const items = data.map((contact) => {
+    const li = document.createElement("li");
+    const fullname = document.createElement("p");
+    const email = document.createElement("p");
+    const buttonStatus = state.favContacts.some((favContact) => {
+      return contact.id === favContact.id;
+    });
+    button = Button({
+      value: buttonStatus ? "Delete from Favorite" : "Add to Favorite",
+      func: buttonStatus ? () => delFav(contact.id) : () => addFav(contact.id),
+    });
+    fullname.textContent =
+      contact.firstName + " " + contact.maidenName + " " + contact.lastName;
+    email.textContent = contact.email;
+    li.append(fullname, email, button);
+    return li;
+  });
+  list.append(...items);
+  return list;
+}
+
 function HomePage() {
   const navBar = NavBar();
   const header = HeaderText("Contact List");
@@ -251,11 +220,14 @@ function HomePage() {
       setState({ searchValue: searchValues });
     },
   });
-  const button = ClearButton({
+  const button = Button({
     value: "Clear",
-    functionname: ClearSearchValue,
+    func: ClearSearchValue,
   });
-  const list = ContactList();
+  const list = ContactList({
+    currentPage: state.currentPage,
+    data: state.contacts,
+  });
   const page = Pages({
     totalData: state.totalData,
     onChange: function (number) {
@@ -263,10 +235,7 @@ function HomePage() {
     },
   });
   const div = document.createElement("div");
-  div.append(navBar);
-  div.append(header);
-  div.append(input);
-  div.append(button);
+  div.append(navBar, header, input, button);
   if (state.isLoading) {
     const loadingText = document.createElement("p");
     loadingText.textContent = "Data is Loading";
@@ -276,8 +245,7 @@ function HomePage() {
     errorText.textContent = state.errorMassage;
     div.append(errorText);
   } else if (state.totalData > 0) {
-    div.append(list);
-    div.append(page);
+    div.append(list, page);
   } else {
     const emptyText = document.createElement("p");
     emptyText.textContent = "Data empty";
@@ -287,6 +255,7 @@ function HomePage() {
 }
 
 function FavoritesPage() {
+  const filterData = filterFavContactslist();
   const navBar = NavBar();
   const header = HeaderText("Favorite Contact List");
   const input = inputText({
@@ -295,11 +264,14 @@ function FavoritesPage() {
       setState({ searchValueFavorite: searchValues });
     },
   });
-  const button = ClearButton({
+  const button = Button({
     value: "Clear",
-    functionname: ClearSearchValueFavorite,
+    func: ClearSearchValueFavorite,
   });
-  const list = favContactsList();
+  const list = ContactList({
+    currentPage: state.currentPageFavorite,
+    data: filterData,
+  });
   const page = Pages({
     totalData: state.favContacts.filter(filterName).length,
     onChange: function (number) {
@@ -309,13 +281,12 @@ function FavoritesPage() {
   const div = document.createElement("div");
   div.append(navBar, header, input, button);
   if (filterFavContactslist().length > 0) {
-    div.append(list);
+    div.append(list, page);
   } else {
     const emptyText = document.createElement("p");
     emptyText.textContent = "Data empty";
     div.append(emptyText);
   }
-  div.append(page);
   return div;
 }
 
