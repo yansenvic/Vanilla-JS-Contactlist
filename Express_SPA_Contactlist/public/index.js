@@ -1,5 +1,5 @@
 let state = {
-  hash: location.hash,
+  path: window.location.pathname,
   contacts: [],
   favContacts: JSON.parse(localStorage.getItem("favContacts")) ?? [],
   searchValue: "",
@@ -22,8 +22,8 @@ function setState(newState) {
 let timer;
 
 function onStateChange(prevState, nextState) {
-  if (prevState.hash !== nextState.hash) {
-    history.pushState(null, "", nextState.hash);
+  if (prevState.path !== nextState.path) {
+    history.pushState(null, "", nextState.path);
   }
   if (prevState.searchValue !== nextState.searchValue) {
     setState({ isLoading: true });
@@ -48,23 +48,22 @@ function onStateChange(prevState, nextState) {
 
 function Link(props) {
   const link = document.createElement("a");
-  link.href = props.href;
+  link.href = props.pathname;
   link.textContent = props.label;
   link.onclick = function (event) {
     event.preventDefault();
-    const url = new URL(event.target.href);
-    setState({ hash: url.hash });
+    setState({ path: new URL(event.target.href).pathname });
   };
   return link;
 }
 
 function NavBar() {
   const linkHome = Link({
-    href: "#home",
+    pathname: "/home",
     label: "Home",
   });
   const linkFavorites = Link({
-    href: "#favorites",
+    pathname: "/favorites",
     label: "Favorites",
   });
   const div = document.createElement("div");
@@ -80,7 +79,7 @@ function Pages(props) {
   for (let index = 1; index <= totalPage; index++) {
     const link = document.createElement("a");
     const number = index;
-    link.href = state.hash;
+    link.href = state.path;
     link.textContent = index + " ";
     link.onclick = function () {
       event.preventDefault();
@@ -293,9 +292,9 @@ function FavoritesPage() {
 function App() {
   const homepage = HomePage();
   const favoritespage = FavoritesPage();
-  if (state.hash === "#home" || state.hash === "") {
+  if (state.path === "/home" || state.path === "/") {
     return homepage;
-  } else if (state.hash === "#favorites") {
+  } else if (state.path === "/favorites") {
     return favoritespage;
   }
 }
