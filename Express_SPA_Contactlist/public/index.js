@@ -185,7 +185,7 @@ function fetchData() {
     .finally(() => setState({ isLoading: false }));
 }
 
-function ContactListCoba(props) {
+function ContactList(props) {
   const limit = 10;
   const list = document.createElement("ol");
   list.start = (props.currentPage - 1) * limit + 1;
@@ -211,57 +211,6 @@ function ContactListCoba(props) {
   return list;
 }
 
-function ContactList() {
-  const limit = 10;
-  const list = document.createElement("ol");
-  list.start = (state.currentPage - 1) * limit + 1;
-  const items = state.contacts.map((contact) => {
-    const li = document.createElement("li");
-    const fullname = document.createElement("p");
-    const email = document.createElement("p");
-    const buttonStatus = state.favContacts.some((favContact) => {
-      return contact.id === favContact.id;
-    });
-    button = Button({
-      value: buttonStatus ? "Delete from Favorite" : "Add to Favorite",
-      func: buttonStatus ? () => delFav(contact.id) : () => addFav(contact.id),
-    });
-    fullname.textContent =
-      contact.firstName + " " + contact.maidenName + " " + contact.lastName;
-    email.textContent = contact.email;
-    li.append(fullname, email, button);
-    return li;
-  });
-  list.append(...items);
-  return list;
-}
-
-function favContactsList(filterData) {
-  const limit = 10;
-  const list = document.createElement("ol");
-  list.start = (state.currentPageFavorite - 1) * limit + 1;
-  const items = filterData.map((favContact) => {
-    const li = document.createElement("li");
-    const fullname = document.createElement("p");
-    const email = document.createElement("p");
-    button = Button({
-      value: "Delete from Favorite",
-      func: () => delFav(favContact.id),
-    });
-    fullname.textContent =
-      favContact.firstName +
-      " " +
-      favContact.maidenName +
-      " " +
-      favContact.lastName;
-    email.textContent = favContact.email;
-    li.append(fullname, email, button);
-    return li;
-  });
-  list.append(...items);
-  return list;
-}
-
 function HomePage() {
   const navBar = NavBar();
   const header = HeaderText("Contact List");
@@ -275,7 +224,7 @@ function HomePage() {
     value: "Clear",
     func: ClearSearchValue,
   });
-  const list = ContactListCoba({
+  const list = ContactList({
     currentPage: state.currentPage,
     data: state.contacts,
   });
@@ -319,7 +268,7 @@ function FavoritesPage() {
     value: "Clear",
     func: ClearSearchValueFavorite,
   });
-  const list = ContactListCoba({
+  const list = ContactList({
     currentPage: state.currentPageFavorite,
     data: filterData,
   });
