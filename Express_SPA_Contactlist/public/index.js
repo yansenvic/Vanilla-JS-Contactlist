@@ -1,4 +1,7 @@
-let state = {
+import { HomePage } from "./homepage.js";
+import { FavoritesPage } from "./favoritepage.js";
+
+export let state = {
   path: window.location.pathname,
   contacts: [],
   favContacts: JSON.parse(localStorage.getItem("favContacts")) ?? [],
@@ -11,7 +14,7 @@ let state = {
   totalData: 0,
 };
 
-function setState(newState) {
+export function setState(newState) {
   const prevState = { ...state };
   const nextState = { ...state, ...newState };
   state = nextState;
@@ -57,7 +60,7 @@ function Link(props) {
   return link;
 }
 
-function NavBar() {
+export function NavBar() {
   const linkHome = Link({
     pathname: "/home",
     label: "Home",
@@ -73,7 +76,7 @@ function NavBar() {
   return div;
 }
 
-function Pages(props) {
+export function Pages(props) {
   const totalPage = Math.ceil(props.totalData / 10);
   let div = document.createElement("div");
   for (let index = 1; index <= totalPage; index++) {
@@ -81,7 +84,7 @@ function Pages(props) {
     const number = index;
     link.href = state.path;
     link.textContent = index + " ";
-    link.onclick = function () {
+    link.onclick = function (event) {
       event.preventDefault();
       props.onChange(number);
     };
@@ -90,13 +93,13 @@ function Pages(props) {
   return div;
 }
 
-function HeaderText(text) {
+export function HeaderText(text) {
   const teks = document.createElement("h2");
   teks.innerText = text;
   return teks;
 }
 
-function inputText(props) {
+export function inputText(props) {
   const input = document.createElement("input");
   input.type = "text";
   input.placeholder = "Enter Name";
@@ -108,20 +111,12 @@ function inputText(props) {
   return input;
 }
 
-function Button(props) {
+export function Button(props) {
   const button = document.createElement("input");
   button.type = "button";
   button.value = props.value;
   button.onclick = props.func;
   return button;
-}
-
-function ClearSearchValue() {
-  setState({ searchValue: "" });
-}
-
-function ClearSearchValueFavorite() {
-  setState({ searchValueFavorite: "" });
 }
 
 function addFav(id) {
@@ -138,28 +133,6 @@ function delFav(id) {
   setState({
     favContacts: result,
   });
-}
-
-function filterFavContactslist() {
-  const limit = 10;
-  const items = state.favContacts.filter(filterName);
-  return [
-    ...items.slice(
-      (state.currentPageFavorite - 1) * limit,
-      state.currentPageFavorite * limit
-    ),
-  ];
-}
-
-function filterName(item) {
-  const fullname = (
-    item.firstName +
-    " " +
-    item.maidenName +
-    " " +
-    item.lastName
-  ).toLowerCase();
-  return fullname.match(state.searchValueFavorite.toLowerCase());
 }
 
 function fetchData() {
@@ -184,11 +157,11 @@ function fetchData() {
     .finally(() => setState({ isLoading: false }));
 }
 
-function ContactList(props) {
+export function ContactList(props) {
   const limit = 10;
   const list = document.createElement("ol");
   list.start = (props.currentPage - 1) * limit + 1;
-  data = props.data;
+  const data = props.data;
   const items = data.map((contact) => {
     const li = document.createElement("li");
     const fullname = document.createElement("p");
@@ -196,7 +169,7 @@ function ContactList(props) {
     const buttonStatus = state.favContacts.some((favContact) => {
       return contact.id === favContact.id;
     });
-    button = Button({
+    const button = Button({
       value: buttonStatus ? "Delete from Favorite" : "Add to Favorite",
       func: buttonStatus ? () => delFav(contact.id) : () => addFav(contact.id),
     });
@@ -208,85 +181,6 @@ function ContactList(props) {
   });
   list.append(...items);
   return list;
-}
-
-function HomePage() {
-  const navBar = NavBar();
-  const header = HeaderText("Contact List");
-  const input = inputText({
-    value: state.searchValue,
-    onInput: function (searchValues) {
-      setState({ searchValue: searchValues });
-    },
-  });
-  const button = Button({
-    value: "Clear",
-    func: ClearSearchValue,
-  });
-  const list = ContactList({
-    currentPage: state.currentPage,
-    data: state.contacts,
-  });
-  const page = Pages({
-    totalData: state.totalData,
-    onChange: function (number) {
-      setState({ currentPage: number });
-    },
-  });
-  const div = document.createElement("div");
-  div.append(navBar, header, input, button);
-  if (state.isLoading) {
-    const loadingText = document.createElement("p");
-    loadingText.textContent = "Data is Loading";
-    div.append(loadingText);
-  } else if (state.errorMassage !== "") {
-    const errorText = document.createElement("p");
-    errorText.textContent = state.errorMassage;
-    div.append(errorText);
-  } else if (state.totalData > 0) {
-    div.append(list, page);
-  } else {
-    const emptyText = document.createElement("p");
-    emptyText.textContent = "Data empty";
-    div.append(emptyText);
-  }
-  return div;
-}
-
-function FavoritesPage() {
-  const filterData = filterFavContactslist();
-  const navBar = NavBar();
-  const header = HeaderText("Favorite Contact List");
-  const input = inputText({
-    value: state.searchValueFavorite,
-    onInput: function (searchValues) {
-      setState({ searchValueFavorite: searchValues });
-    },
-  });
-  const button = Button({
-    value: "Clear",
-    func: ClearSearchValueFavorite,
-  });
-  const list = ContactList({
-    currentPage: state.currentPageFavorite,
-    data: filterData,
-  });
-  const page = Pages({
-    totalData: state.favContacts.filter(filterName).length,
-    onChange: function (number) {
-      setState({ currentPageFavorite: number });
-    },
-  });
-  const div = document.createElement("div");
-  div.append(navBar, header, input, button);
-  if (filterFavContactslist().length > 0) {
-    div.append(list, page);
-  } else {
-    const emptyText = document.createElement("p");
-    emptyText.textContent = "Data empty";
-    div.append(emptyText);
-  }
-  return div;
 }
 
 function App() {
