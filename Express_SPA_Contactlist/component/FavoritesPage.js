@@ -1,11 +1,16 @@
-import { NavBar, HeaderText, inputText, Button } from "./index.js";
-import { ContactList, Pages, state, setState } from "./index.js";
+import { NavBar } from "./NavBar.js";
+import { HeaderText } from "./HeaderText.js";
+import { InputText } from "./InputText.js";
+import { Button } from "./Button.js";
+import { ContactList } from "./ContactList.js";
+import { Pages } from "./Pages.js";
+import { state, setState } from "../public/state.js";
 
 export function FavoritesPage() {
   const filterData = filterFavContactslist();
   const navBar = NavBar();
   const header = HeaderText("Favorite Contact List");
-  const input = inputText({
+  const input = InputText({
     value: state.searchValueFavorite,
     onInput: function (searchValues) {
       setState({ searchValueFavorite: searchValues });
@@ -13,7 +18,9 @@ export function FavoritesPage() {
   });
   const button = Button({
     value: "Clear",
-    func: ClearSearchValueFavorite,
+    onClick: () => {
+      setState({ searchValueFavorite: "" });
+    },
   });
   const list = ContactList({
     currentPage: state.currentPageFavorite,
@@ -57,8 +64,4 @@ function filterName(item) {
     item.lastName
   ).toLowerCase();
   return fullname.match(state.searchValueFavorite.toLowerCase());
-}
-
-function ClearSearchValueFavorite() {
-  setState({ searchValueFavorite: "" });
 }

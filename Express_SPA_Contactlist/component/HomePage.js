@@ -1,10 +1,15 @@
-import { NavBar, HeaderText, inputText, Button } from "./index.js";
-import { ContactList, Pages, state, setState } from "./index.js";
+import { NavBar } from "./NavBar.js";
+import { HeaderText } from "./HeaderText.js";
+import { InputText } from "./InputText.js";
+import { Button } from "./Button.js";
+import { ContactList } from "./ContactList.js";
+import { Pages } from "./Pages.js";
+import { state, setState } from "../public/state.js";
 
 export function HomePage() {
   const navBar = NavBar();
   const header = HeaderText("Contact List");
-  const input = inputText({
+  const input = InputText({
     value: state.searchValue,
     onInput: function (searchValues) {
       setState({ searchValue: searchValues });
@@ -12,7 +17,9 @@ export function HomePage() {
   });
   const button = Button({
     value: "Clear",
-    func: ClearSearchValue,
+    onClick: () => {
+      setState({ searchValue: "" });
+    },
   });
   const list = ContactList({
     currentPage: state.currentPage,
@@ -42,8 +49,4 @@ export function HomePage() {
     div.append(emptyText);
   }
   return div;
-}
-
-function ClearSearchValue() {
-  setState({ searchValue: "" });
 }
