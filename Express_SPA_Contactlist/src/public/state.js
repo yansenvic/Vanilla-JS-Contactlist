@@ -1,4 +1,4 @@
-import { Render } from "./index.js";
+import { Render } from "../index.js";
 import { fetchData } from "./fetchData.js";
 
 export let state = {

@@ -1,5 +1,5 @@
-import { App } from "./App.js";
-import { onStateChange, state } from "./state.js";
+import { App } from "./public/App.js";
+import { onStateChange, state } from "./public/state.js";
 
 export function Render() {
   const root = document.getElementById("root");

@@ -6,6 +6,7 @@ const port = 3000;
 app.use(express.static("src"));
 app.use(express.static("public"));
 app.use(express.static("component"));
+app.use(express.static("dist"));
 
 app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
