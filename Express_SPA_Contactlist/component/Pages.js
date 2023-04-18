@@ -1,4 +1,4 @@
-import { state } from "../public/state";
+import { state } from "../state.js";
 
 export function Pages(props) {
   const totalPage = Math.ceil(props.totalData / 10);

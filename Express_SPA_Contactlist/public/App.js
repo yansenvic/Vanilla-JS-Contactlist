@@ -1,5 +1,5 @@
-import { HomePage } from "../component/HomePage.js";
-import { FavoritesPage } from "../component/FavoritesPage.js";
+import { HomePage } from "../HomePage.js";
+import { FavoritesPage } from "../FavoritesPage.js";
 import { state } from "./state.js";
 
 export function App() {

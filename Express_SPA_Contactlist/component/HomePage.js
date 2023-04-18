@@ -4,7 +4,7 @@ import { InputText } from "./InputText.js";
 import { Button } from "./Button.js";
 import { ContactList } from "./ContactList.js";
 import { Pages } from "./Pages.js";
-import { state, setState } from "../public/state.js";
+import { state, setState } from "../state.js";
 
 export function HomePage() {
   const navBar = NavBar();

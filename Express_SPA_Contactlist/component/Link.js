@@ -1,4 +1,4 @@
-import { setState } from "../public/state";
+import { setState } from "../state.js";
 
 export function Link(props) {
   const link = document.createElement("a");

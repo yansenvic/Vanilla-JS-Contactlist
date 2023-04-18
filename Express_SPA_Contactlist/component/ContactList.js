@@ -1,6 +1,6 @@
-import { state, setState } from "../public/state";
-import { Button } from "./Button";
-import { delFav } from "../public/delFav";
+import { state, setState } from "../state.js";
+import { Button } from "./Button.js";
+import { delFav } from "../delFav.js";
 
 export function ContactList(props) {
   const limit = 10;
