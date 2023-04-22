@@ -78,6 +78,8 @@ function createIntel(processor) {
     anda telah membuat processor baru dengan detail berikut :
     nama base model : ${processor.baseModel}
     nama model : ${processor.modelName}
+    Total Core : ${processor.coreTotal}
+    Kecepatan Clock : ${processor.clockSpeed}
     apakah turbo boost tersedia : ${processor.turboBoost} 
     `);
 }
@@ -89,6 +91,8 @@ function createAMD(processor) {
     anda telah membuat processor baru dengan detail berikut :
     nama base model : ${processor.baseModel}
     nama model : ${processor.modelName}
+    Total Core : ${processor.coreTotal}
+    Kecepatan Clock : ${processor.clockSpeed}
     apakah turbo boost tersedia : ${processor.precisionBoost} 
     `);
 }
@@ -96,6 +100,7 @@ const coreI5 = {
     brand: "Intel",
     baseModel: "core I5",
     modelName: "I5-1135U",
+    coreTotal: 2,
     clockSpeed: 4,
     turboBoost: true,
 };
@@ -103,6 +108,7 @@ const ryzen3 = {
     brand: "AMD",
     baseModel: "Ryzen 3",
     modelName: "r-3550x",
+    coreTotal: "dual core",
     clockSpeed: 4,
     precisionBoost: true,
 };

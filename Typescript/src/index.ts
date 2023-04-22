@@ -91,11 +91,12 @@ create3()
 add(10,20)
 console.log(add1(20,40))
 
-
+type core = 2|4|8|12|"dual core" | "quad core" | "octa core"
 interface Processor {
     brand : string,
     baseModel : string,
     modelName : string,
+    coreTotal : core,
     clockSpeed : number,
 }
 
@@ -115,6 +116,8 @@ function createIntel  (processor : intel) : void {
     anda telah membuat processor baru dengan detail berikut :
     nama base model : ${processor.baseModel}
     nama model : ${processor.modelName}
+    Total Core : ${processor.coreTotal}
+    Kecepatan Clock : ${processor.clockSpeed}
     apakah turbo boost tersedia : ${processor.turboBoost} 
     `)    
 }
@@ -127,6 +130,8 @@ function createAMD  (processor : amd) : void {
     anda telah membuat processor baru dengan detail berikut :
     nama base model : ${processor.baseModel}
     nama model : ${processor.modelName}
+    Total Core : ${processor.coreTotal}
+    Kecepatan Clock : ${processor.clockSpeed}
     apakah turbo boost tersedia : ${processor.precisionBoost} 
     `)    
 }
@@ -135,6 +140,7 @@ const coreI5 : intel = {
     brand : "Intel",
     baseModel : "core I5",
     modelName : "I5-1135U",
+    coreTotal : 2,
     clockSpeed : 4,
     turboBoost : true,
 }
@@ -143,6 +149,7 @@ const ryzen3 : amd = {
     brand : "AMD",
     baseModel : "Ryzen 3",
     modelName : "r-3550x",
+    coreTotal : "dual core",
     clockSpeed : 4,
     precisionBoost : true,
 }
